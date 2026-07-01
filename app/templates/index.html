@@ -1,231 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIFA Watch Party Finder — Vancouver</title>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
 
-        /* TOPBAR */
-        .topbar { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 12px 20px; display: flex; align-items: center; gap: 10px; }
-        .topbar h1 { font-size: 16px; font-weight: 600; }
-        .live-badge { background: #1a8a3c; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
-        .location { margin-left: auto; font-size: 13px; color: #888; }
+        /* ─── RESET ─────────────────────────────────────────────────────────
+           margin/padding 0 removes default browser spacing
+           box-sizing border-box means padding is included in element width
+           font-family uses system font — looks native on every device        */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
 
-        /* SCORES STRIP */
-        .scores-strip { background: #fafafa; border-bottom: 1px solid #e5e5e5; padding: 10px 20px; display: flex; gap: 8px; overflow-x: auto; }
-        .score-pill { flex-shrink: 0; background: #fff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; white-space: nowrap; }
-        .score-pill.live { border-color: #1a8a3c; }
-        .live-dot { width: 6px; height: 6px; background: #1a8a3c; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-        .score-num { font-weight: 600; }
-        .score-team { color: #666; }
+        /* ─── TOPBAR ─────────────────────────────────────────────────────────
+           sticky so it stays at top when user scrolls
+           flexbox keeps all items on one horizontal line
+           z-index 10 makes sure it sits above all other content              */
+        .topbar {
+            background-color: white;
+            border-bottom: 0.5px solid #e0dfd8;
+            padding: 12px 16px;          /* shorthand: top/bottom left/right */
+            display: flex;               /* items sit in a row */
+            align-items: center;         /* vertically centered */
+            gap: 8px;                    /* space between items */
+            position: sticky;            /* stays at top when scrolling */
+            top: 0;
+            z-index: 10;                 /* sits above other content */
+        }
 
-        /* MAIN LAYOUT */
-        .main { max-width: 700px; margin: 20px auto; padding: 0 16px; }
+        .app-name {
+            font-size: 15px;
+            font-weight: 600;
+        }
 
-        /* SECTION HEADERS */
-        .section-header { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; margin-top: 24px; }
+        /* green pill badge next to app name */
+        .live-badge {
+            background-color: #166534;   /* dark green */
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;            /* shorthand: top/bottom left/right */
+            border-radius: 20px;         /* pill shape */
+        }
 
-        /* MATCH CARDS */
-        .match-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-        .match-card.live { border-color: #1a8a3c; }
-        .match-card.live .match-status { color: #1a8a3c; font-weight: 600; }
-        .match-teams { flex: 1; }
-        .match-name { font-size: 14px; font-weight: 500; }
-        .match-stage { font-size: 12px; color: #888; margin-top: 2px; }
-        .match-score { font-size: 20px; font-weight: 700; min-width: 52px; text-align: center; }
-        .match-score.no-score { font-size: 13px; color: #aaa; }
-        .match-time { font-size: 12px; color: #aaa; text-align: right; min-width: 52px; }
-        .match-status { font-size: 11px; background: #e8f5ee; color: #1a8a3c; padding: 2px 6px; border-radius: 4px; font-weight: 600; display: inline-block; margin-top: 2px; }
+        /* margin-left auto pushes location all the way to the right */
+        .location {
+            margin-left: auto;
+            font-size: 12px;
+            color: #888;
+        }
 
-        /* VENUE CARDS */
-        .venue-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
-        .venue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .venue-name { font-size: 15px; font-weight: 600; }
-        .hype-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
-        .hype-high { background: #fff0ed; color: #b83b1a; }
-        .hype-med { background: #fff8e0; color: #8a5a00; }
-        .hype-low { background: #e6f3fb; color: #1a5f80; }
-        .venue-meta { display: flex; gap: 14px; font-size: 12px; color: #888; margin-bottom: 10px; }
-        .crowd-label { font-size: 11px; color: #aaa; display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .crowd-bar { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
-        .crowd-fill { height: 100%; border-radius: 3px; }
-        .fill-high { background: #e0401a; }
-        .fill-med { background: #d68c00; }
-        .fill-low { background: #1a7aa8; }
-        .directions-link { font-size: 12px; color: #1a7aa8; text-decoration: underline; cursor: pointer; margin-top: 8px; display: inline-block; }
+        /* ─── SCORES STRIP ───────────────────────────────────────────────────
+           today's live and upcoming scores scroll horizontally
+           webkit scrollbar hidden so strip looks clean on desktop             */
+        .scores-strip {
+            background-color: white;
+            border-bottom: 0.5px solid #e0dfd8;
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;                    /* horizontal scroll */
+            -webkit-overflow-scrolling: touch;   /* smooth scroll on iPhone */
+        }
 
-        /* LOADING */
-        .loading { color: #aaa; font-size: 13px; padding: 20px 0; text-align: center; }
+        .scores-strip::-webkit-scrollbar {
+            display: none;                       /* hide scrollbar */
+        }
+
+        /* ─── NAV TABS ───────────────────────────────────────────────────────
+           container scrolls horizontally on small screens
+           each tab takes equal width with flex:1
+           active tab gets green text and green underline                      */
+        .nav-tabs {
+            display: flex;
+            background-color: white;
+            border-bottom: 0.5px solid #e0dfd8;
+            overflow-x: auto;                    /* scrolls on small screens */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-tab {
+            flex: 1;                             /* tabs spread evenly across full width */
+            text-align: center;
+            padding: 10px 16px;                  /* breathing room around text */
+            font-size: 13px;
+            color: #888;                         /* grey when not active */
+            cursor: pointer;                     /* hand cursor on hover */
+            border-bottom: 2px solid transparent;/* invisible underline — becomes green when active */
+            white-space: nowrap;                 /* prevents text wrapping to second line */
+            flex-shrink: 0;                      /* prevents tabs squishing on small screens */
+        }
+
+        /* active tab — currently selected */
+        .nav-tab.active {
+            color: #166534;                      /* green text */
+            border-bottom-color: #166534;        /* green underline */
+            font-weight: 500;
+        }
+
+        /* ─── PANELS ─────────────────────────────────────────────────────────
+           all panels hidden by default with display none
+           only the panel with class active is shown
+           max-width 680px keeps content readable on wide screens              */
+        .panel {
+            display: none;                       /* hidden by default */
+            padding: 14px 16px;
+            max-width: 680px;
+            margin: 0 auto;                      /* centered on wide screens */
+        }
+
+        .panel.active {
+            display: block;                      /* only active panel shows */
+        }
+
     </style>
 </head>
 <body>
 
-    <!-- TOPBAR -->
+    <!-- TOPBAR — app name, live badge, location pushed to right -->
     <div class="topbar">
         <span>⚽</span>
-        <h1>Watch Party Finder</h1>
+        <span class="app-name">FIFA Watch Party Finder</span>
         <span class="live-badge">LIVE</span>
         <span class="location">📍 Vancouver</span>
     </div>
 
-    <!-- LIVE SCORES STRIP -->
-    <div class="scores-strip" id="scores-strip">
+    <!-- SCORES STRIP — today's live and upcoming scores, scrolls horizontally -->
+    <div class="scores-strip">
         <div class="loading">Loading scores...</div>
     </div>
 
-    <div class="main">
-
-        <!-- TODAY'S MATCHES -->
-        <div class="section-header">Today's matches</div>
-        <div id="matches-list">
-            <div class="loading">Loading matches...</div>
-        </div>
-
-        <!-- VENUES -->
-        <div class="section-header">Watch party venues</div>
-        <div id="venues-list">
-            <div class="loading">Loading venues...</div>
-        </div>
-
+    <!-- NAV TABS — switches between the 5 panels -->
+    <div class="nav-tabs">
+        <div class="nav-tab active">🗺 Map</div>
+        <div class="nav-tab">📅 Matches</div>
+        <div class="nav-tab">🏆 Groups</div>
+        <div class="nav-tab">🌳 Bracket</div>
+        <div class="nav-tab">🔥 Hype Intel</div>
     </div>
 
-<script>
-    // FORMAT DATE to readable time in PT
-    function formatTime(utcDate) {
-        const date = new Date(utcDate);
-        return date.toLocaleTimeString('en-CA', {
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: 'America/Vancouver'
-        });
-    }
-
-    // FORMAT STAGE to readable label
-    function formatStage(stage) {
-        const stages = {
-            'GROUP_STAGE': 'Group Stage',
-            'LAST_32': 'Round of 32',
-            'LAST_16': 'Round of 16',
-            'QUARTER_FINALS': 'Quarter Final',
-            'SEMI_FINALS': 'Semi Final',
-            'FINAL': 'Final'
-        };
-        return stages[stage] || stage;
-    }
-
-    // HYPE BADGE based on busyness score
-    function hypeBadge(score) {
-        if (score >= 75) return '<span class="hype-badge hype-high">🔥 Wild</span>';
-        if (score >= 50) return '<span class="hype-badge hype-med">⚽ Buzzing</span>';
-        return '<span class="hype-badge hype-low">🍺 Chill</span>';
-    }
-
-    // CROWD FILL CLASS
-    function fillClass(score) {
-        if (score >= 75) return 'fill-high';
-        if (score >= 50) return 'fill-med';
-        return 'fill-low';
-    }
-
-    // FETCH AND RENDER MATCHES
-    async function loadMatches() {
-        const response = await fetch('/api/matches');
-        const matches = await response.json();
-
-        // Filter to today's matches in Vancouver time
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
-        const todayMatches = matches.filter(m => {
-            const matchDate = new Date(m.date).toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
-            return matchDate === today;
-        });
-
-        // Build scores strip — live and today's matches only
-        const strip = document.getElementById('scores-strip');
-        if (todayMatches.length === 0) {
-            strip.innerHTML = '<div class="loading">No matches today</div>';
-        } else {
-            strip.innerHTML = todayMatches.map(m => {
-                const isLive = m.status === 'IN_PLAY';
-                const score = m.home_score !== null ? `${m.home_score} – ${m.away_score}` : 'vs';
-                return `
-                    <div class="score-pill ${isLive ? 'live' : ''}">
-                        ${isLive ? '<span class="live-dot"></span>' : ''}
-                        <span class="score-team">${m.home_team}</span>
-                        <span class="score-num">${score}</span>
-                        <span class="score-team">${m.away_team}</span>
-                        ${isLive ? '<span style="font-size:11px;color:#1a8a3c">LIVE</span>' : `<span style="font-size:11px;color:#aaa">${formatTime(m.date)}</span>`}
-                    </div>`;
-            }).join('');
-        }
-
-        // Build matches list
-        const list = document.getElementById('matches-list');
-        if (todayMatches.length === 0) {
-            list.innerHTML = '<div class="loading">No matches scheduled today</div>';
-        } else {
-            list.innerHTML = todayMatches.map(m => {
-                const isLive = m.status === 'IN_PLAY';
-                const isFinished = m.status === 'FINISHED';
-                const score = m.home_score !== null
-                    ? `<div class="match-score">${m.home_score} – ${m.away_score}</div>`
-                    : `<div class="match-score no-score">vs</div>`;
-                const timeOrStatus = isLive
-                    ? '<span class="match-status">LIVE</span>'
-                    : isFinished
-                    ? '<span class="match-status" style="background:#f0f0f0;color:#888">FT</span>'
-                    : `<div class="match-time">${formatTime(m.date)}</div>`;
-                return `
-                    <div class="match-card ${isLive ? 'live' : ''}">
-                        <div class="match-teams">
-                            <div class="match-name">${m.home_team} vs ${m.away_team}</div>
-                            <div class="match-stage">${formatStage(m.stage)}</div>
-                        </div>
-                        ${score}
-                        ${timeOrStatus}
-                    </div>`;
-            }).join('');
-        }
-    }
-
-    // FETCH AND RENDER VENUES
-    async function loadVenues() {
-        const response = await fetch('/api/venues');
-        const venues = await response.json();
-        const list = document.getElementById('venues-list');
-        list.innerHTML = venues.map(v => `
-            <div class="venue-card">
-                <div class="venue-header">
-                    <div class="venue-name">${v.name}</div>
-                    ${hypeBadge(v.busyness_score)}
-                </div>
-                <div class="venue-meta">
-                    <span>📍 ${v.neighbourhood}</span>
-                    <span>🕐 ${v.opening_hours}</span>
-                    <span>📺 ${v.num_screens} screens</span>
-                    <span>${v.cover_charge === 0 ? '✅ Free entry' : `$${v.cover_charge} cover`}</span>
-                </div>
-                <div class="crowd-label">
-                    <span>Crowd level</span>
-                    <span>${v.busyness_score}%</span>
-                </div>
-                <div class="crowd-bar">
-                    <div class="crowd-fill ${fillClass(v.busyness_score)}" style="width:${v.busyness_score}%"></div>
-                </div>
-                <a class="directions-link" href="https://www.google.com/maps/dir/?api=1&destination=${v.latitude},${v.longitude}" target="_blank">
-                    Get directions ↗
-                </a>
-            </div>
-        `).join('');
-    }
-
-    // LOAD EVERYTHING
-    loadMatches();
-    loadVenues();
-</script>
+    <!-- PANELS — one per tab, only active panel is visible at a time -->
+    <!--
+        Map        → find venues near you
+        Matches    → Live / Upcoming / Results filter chips
+        Groups     → group stage standings
+        Bracket    → full tournament tree
+        Hype Intel → crowd predictions by neighbourhood
+    -->
+    <div class="panel active" id="panel-map"></div>
+    <div class="panel" id="panel-matches"></div>
+    <div class="panel" id="panel-groups"></div>
+    <div class="panel" id="panel-bracket"></div>
+    <div class="panel" id="panel-hype"></div>
 
 </body>
 </html>
